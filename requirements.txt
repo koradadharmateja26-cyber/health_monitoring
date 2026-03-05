@@ -1,4 +1,8 @@
 streamlit
-pandas
-scikit-learn
+google-generativeai
+pickle-mixin
 numpy
+pandas
+scikit-learn==1.5.1
+Pillow
+python-dotenv
