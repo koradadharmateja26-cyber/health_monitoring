@@ -81,7 +81,7 @@ if selected == "Diabetes":
             if prediction[0] == 1:
                 st.error("### Result: Positive")
                 st.write("The person is likely Diabetic. Please consult a doctor for a professional diagnosis.")
-                st.subheader("📋 Recommended Precautions & Diet")
+                st.subheader("Recommended Precautions & Diet")
                 col_diet, col_links = st.columns(2)
                 with col_diet:
                     st.markdown("""
@@ -104,7 +104,7 @@ if selected == "Diabetes":
 
 # MENU 2: HEART DISEASE (Your heart.py content)
 elif selected == "Heart Disease":
-    st.title("❤️ Heart Disease Prediction App")
+    st.title("Heart Disease Prediction App")
     try:
         model_h = pickle.load(open(os.path.join(BASE_DIR, 'heart_model.sav'), 'rb'))
         scaler_h = pickle.load(open(os.path.join(BASE_DIR, 'heart_scaler.sav'), 'rb'))
@@ -138,7 +138,7 @@ elif selected == "Heart Disease":
             
             if prediction[0] == 1:
                 st.error("### Result: High Risk of Heart Disease")
-                st.subheader("🎥 Educational Resources (YouTube)")
+                st.subheader("Educational Resources (YouTube)")
                 yt_col1, yt_col2, yt_col3 = st.columns(3)
                 with yt_col1: st.video("https://www.youtube.com/watch?v=njv_fC_O0I0")
                 with yt_col2: st.video("https://www.youtube.com/watch?v=fXm0S8p7y7o")
@@ -146,25 +146,104 @@ elif selected == "Heart Disease":
             else:
                 st.success("### Result: Low Risk")
 
-# MENU 3: PARKINSON'S (Your parkinsons.py content)
+# --- MENU 3: PARKINSON'S DISEASE (Your parkinsons.py content) ---
 elif selected == "Parkinson's":
-    st.title("🧠 Parkinson's Disease Prediction App")
+    st.title("Parkinson's Disease Prediction App")
+    st.write("This tool uses voice acoustic parameters (MDVP) to predict the likelihood of Parkinson's Disease.")
+
+    # 1. Load the Parkinson's model and scaler
     try:
         model_p = pickle.load(open(os.path.join(BASE_DIR, 'parkinsons_model.sav'), 'rb'))
         scaler_p = pickle.load(open(os.path.join(BASE_DIR, 'parkinsons_scaler.sav'), 'rb'))
         ready_p = True
     except FileNotFoundError:
-        st.error("Parkinson's Model files not found!")
+        st.error("Parkinson's Model or Scaler files not found! Check your GitHub repo.")
         ready_p = False
 
     if ready_p:
+        # 2. UI Layout - 3 Columns for all 22 features
         col1, col2, col3 = st.columns(3)
+        
         with col1:
             fo = st.number_input('MDVP:Fo(Hz)', value=0.0, format="%.3f")
-            # ... (Other 21 features go here)
+            fhi = st.number_input('MDVP:Fhi(Hz)', value=0.0, format="%.3f")
+            flo = st.number_input('MDVP:Flo(Hz)', value=0.0, format="%.3f")
+            jitter_p = st.number_input('MDVP:Jitter(%)', value=0.0, format="%.5f")
+            jitter_abs = st.number_input('MDVP:Jitter(Abs)', value=0.0, format="%.5f")
+            rap = st.number_input('MDVP:RAP', value=0.0, format="%.5f")
+            ppq = st.number_input('MDVP:PPQ', value=0.0, format="%.5f")
+            
+        with col2:
+            ddp = st.number_input('Jitter:DDP', value=0.0, format="%.5f")
+            shimmer = st.number_input('MDVP:Shimmer', value=0.0, format="%.5f")
+            shimmer_db = st.number_input('MDVP:Shimmer(dB)', value=0.0, format="%.3f")
+            apq3 = st.number_input('Shimmer:APQ3', value=0.0, format="%.5f")
+            apq5 = st.number_input('Shimmer:APQ5', value=0.0, format="%.5f")
+            apq = st.number_input('MDVP:APQ', value=0.0, format="%.5f")
+            dda = st.number_input('Shimmer:DDA', value=0.0, format="%.5f")
+            
+        with col3:
+            nhr = st.number_input('NHR', value=0.0, format="%.5f")
+            hnr = st.number_input('HNR', value=0.0, format="%.3f")
+            rpde = st.number_input('RPDE', value=0.0, format="%.5f")
+            dfa = st.number_input('DFA', value=0.0, format="%.5f")
+            spread1 = st.number_input('spread1', value=0.0, format="%.5f")
+            spread2 = st.number_input('spread2', value=0.0, format="%.5f")
+            d2 = st.number_input('D2', value=0.0, format="%.5f")
+            ppe = st.number_input('PPE', value=0.0, format="%.5f")
+
+        # 3. Prediction Logic
         if st.button("Predict Parkinson's Status"):
-            # Your specific result logic
-            st.video("https://www.youtube.com/watch?v=ARdGsh_D_XU")
+            try:
+                # Grouping all 22 inputs for the model
+                features = [fo, fhi, flo, jitter_p, jitter_abs, rap, ppq, ddp,
+                            shimmer, shimmer_db, apq3, apq5, apq, dda, nhr, hnr,
+                            rpde, dfa, spread1, spread2, d2, ppe]
+                
+                # Standardize and Predict
+                input_data = np.asarray(features).reshape(1,-1)
+                std_data = scaler_p.transform(input_data)
+                prediction = model_p.predict(std_data)
+
+                st.markdown("---")
+                if prediction[0] == 1:
+                    st.error("### Result: High likelihood of Parkinson's Disease.")
+                    
+                    # --- YOUR PRECAUTIONS & DIET SECTION ---
+                    st.subheader("📋 Management, Precautions & Diet")
+                    p_col1, p_col2 = st.columns(2)
+                    
+                    with p_col1:
+                        st.markdown("""
+                        **Dietary Suggestions:**
+                        * **Antioxidants:** Berries and leafy greens.
+                        * **Omega-3:** Walnuts and fish for brain health.
+                        * **Hydration:** Drink at least 8 glasses of water.
+                        """)
+                    
+                    with p_col2:
+                        st.markdown("""
+                        **Daily Precautions:**
+                        * **Physical Therapy:** Stretching and balance exercises.
+                        * **Speech Therapy:** Practice vocal exercises.
+                        * **Fall Prevention:** Keep rooms well-lit.
+                        """)
+
+                    # --- YOUR VIDEO LINKS ---
+                    st.markdown("---")
+                    st.subheader("Helpful YouTube Resources")
+                    v_col1, v_col2 = st.columns(2)
+                    with v_col1:
+                        st.video("https://www.youtube.com/watch?v=ARdGsh_D_XU")
+                        st.caption("Symptoms Guide")
+                    with v_col2:
+                        st.video("https://www.youtube.com/watch?v=S_3f760x0E0")
+                        st.caption("Exercise Routine")
+                else:
+                    st.success("### Result: The model predicts NO Parkinson's Disease.")
+                    st.balloons()
+            except Exception as e:
+                st.error(f"Prediction Error: {e}")
 
 # MENU 4: PRESCRIPTION DECODER (Your pra.py content)
 elif selected == "Prescription Decoder":
@@ -183,3 +262,4 @@ elif selected == "Prescription Decoder":
                 with st.spinner("Analyzing..."):
                     res = analyze_prescription(image)
                     st.markdown(res)
+
