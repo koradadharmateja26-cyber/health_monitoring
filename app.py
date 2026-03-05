@@ -247,7 +247,7 @@ elif selected == "Parkinson's":
 
 # MENU 4: PRESCRIPTION DECODER (Your pra.py content)
 elif selected == "Prescription Decoder":
-    st.markdown("<h1 style='text-align: center;'>🩺 AI Prescription Decoder</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>AI Prescription Decoder</h1>", unsafe_allow_html=True)
     with st.sidebar:
         api_key = st.text_input("Enter Gemini API Key", type="password")
         if api_key: genai.configure(api_key=api_key)
@@ -262,4 +262,5 @@ elif selected == "Prescription Decoder":
                 with st.spinner("Analyzing..."):
                     res = analyze_prescription(image)
                     st.markdown(res)
+
 
