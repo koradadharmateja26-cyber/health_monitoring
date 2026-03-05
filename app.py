@@ -46,7 +46,7 @@ def analyze_prescription(image):
 
 # MENU 1: DIABETES (Your ap1.py content)
 if selected == "Diabetes":
-    st.title("Diabetes Prediction App")
+    st.title("Diabetes Prediction")
     st.write("Enter the following details to check the diabetes status:")
 
     try:
@@ -104,7 +104,7 @@ if selected == "Diabetes":
 
 # MENU 2: HEART DISEASE (Your heart.py content)
 elif selected == "Heart Disease":
-    st.title("Heart Disease Prediction App")
+    st.title("Heart Disease Prediction")
     try:
         model_h = pickle.load(open(os.path.join(BASE_DIR, 'heart_model.sav'), 'rb'))
         scaler_h = pickle.load(open(os.path.join(BASE_DIR, 'heart_scaler.sav'), 'rb'))
@@ -148,7 +148,7 @@ elif selected == "Heart Disease":
 
 # --- MENU 3: PARKINSON'S DISEASE (Your parkinsons.py content) ---
 elif selected == "Parkinson's":
-    st.title("Parkinson's Disease Prediction App")
+    st.title("Parkinson's Disease Prediction")
     st.write("This tool uses voice acoustic parameters (MDVP) to predict the likelihood of Parkinson's Disease.")
 
     # 1. Load the Parkinson's model and scaler
@@ -247,7 +247,7 @@ elif selected == "Parkinson's":
 
 # MENU 4: PRESCRIPTION DECODER (Your pra.py content)
 elif selected == "Prescription Decoder":
-    st.markdown("<h1 style='text-align: center;'>AI Prescription Decoder</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>Prescription Decoder</h1>", unsafe_allow_html=True)
     with st.sidebar:
         api_key = st.text_input("Enter Gemini API Key", type="password")
         if api_key: genai.configure(api_key=api_key)
@@ -262,5 +262,6 @@ elif selected == "Prescription Decoder":
                 with st.spinner("Analyzing..."):
                     res = analyze_prescription(image)
                     st.markdown(res)
+
 
 
