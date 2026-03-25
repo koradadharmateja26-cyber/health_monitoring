@@ -24,7 +24,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # --- HELPER FUNCTION FOR DECODER ---
 def analyze_prescription(image):
-    models_to_try = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest']
+    models_to_try = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-flash-latest']
+    last_error = ""
+    
     for model_name in models_to_try:
         try:
             model = genai.GenerativeModel(model_name)
@@ -39,12 +41,13 @@ def analyze_prescription(image):
             response = model.generate_content([prompt, image])
             return f"*(Using model: {model_name})*\n\n" + response.text
         except Exception as e:
+            last_error = str(e)
             continue
-    return "Failed to analyze with available models."
+    return f"Failed to analyze. Last error: {last_error}"
 
 # --- MAIN APP LOGIC ---
 
-# MENU 1: DIABETES (Your ap1.py content)
+# MENU 1: DIABETES
 if selected == "Diabetes":
     st.title("Diabetes Prediction")
     st.write("Enter the following details to check the diabetes status:")
@@ -102,7 +105,7 @@ if selected == "Diabetes":
                 st.success("### Result: Negative")
                 st.write("The person is likely Not Diabetic. Continue maintaining a healthy lifestyle!")
 
-# MENU 2: HEART DISEASE (Your heart.py content)
+# MENU 2: HEART DISEASE
 elif selected == "Heart Disease":
     st.title("Heart Disease Prediction")
     try:
@@ -146,24 +149,21 @@ elif selected == "Heart Disease":
             else:
                 st.success("### Result: Low Risk")
 
-# --- MENU 3: PARKINSON'S DISEASE (Your parkinsons.py content) ---
+# MENU 3: PARKINSON'S DISEASE
 elif selected == "Parkinson's":
     st.title("Parkinson's Disease Prediction")
     st.write("This tool uses voice acoustic parameters (MDVP) to predict the likelihood of Parkinson's Disease.")
 
-    # 1. Load the Parkinson's model and scaler
     try:
         model_p = pickle.load(open(os.path.join(BASE_DIR, 'parkinsons_model.sav'), 'rb'))
         scaler_p = pickle.load(open(os.path.join(BASE_DIR, 'parkinsons_scaler.sav'), 'rb'))
         ready_p = True
     except FileNotFoundError:
-        st.error("Parkinson's Model or Scaler files not found! Check your GitHub repo.")
+        st.error("Parkinson's Model or Scaler files not found!")
         ready_p = False
 
     if ready_p:
-        # 2. UI Layout - 3 Columns for all 22 features
         col1, col2, col3 = st.columns(3)
-        
         with col1:
             fo = st.number_input('MDVP:Fo(Hz)', value=0.0, format="%.3f")
             fhi = st.number_input('MDVP:Fhi(Hz)', value=0.0, format="%.3f")
@@ -172,7 +172,6 @@ elif selected == "Parkinson's":
             jitter_abs = st.number_input('MDVP:Jitter(Abs)', value=0.0, format="%.5f")
             rap = st.number_input('MDVP:RAP', value=0.0, format="%.5f")
             ppq = st.number_input('MDVP:PPQ', value=0.0, format="%.5f")
-            
         with col2:
             ddp = st.number_input('Jitter:DDP', value=0.0, format="%.5f")
             shimmer = st.number_input('MDVP:Shimmer', value=0.0, format="%.5f")
@@ -181,7 +180,6 @@ elif selected == "Parkinson's":
             apq5 = st.number_input('Shimmer:APQ5', value=0.0, format="%.5f")
             apq = st.number_input('MDVP:APQ', value=0.0, format="%.5f")
             dda = st.number_input('Shimmer:DDA', value=0.0, format="%.5f")
-            
         with col3:
             nhr = st.number_input('NHR', value=0.0, format="%.5f")
             hnr = st.number_input('HNR', value=0.0, format="%.3f")
@@ -192,150 +190,31 @@ elif selected == "Parkinson's":
             d2 = st.number_input('D2', value=0.0, format="%.5f")
             ppe = st.number_input('PPE', value=0.0, format="%.5f")
 
-        # 3. Prediction Logic
         if st.button("Predict Parkinson's Status"):
-            try:
-                # Grouping all 22 inputs for the model
-                features = [fo, fhi, flo, jitter_p, jitter_abs, rap, ppq, ddp,
-                            shimmer, shimmer_db, apq3, apq5, apq, dda, nhr, hnr,
-                            rpde, dfa, spread1, spread2, d2, ppe]
-                
-                # Standardize and Predict
-                input_data = np.asarray(features).reshape(1,-1)
-                std_data = scaler_p.transform(input_data)
-                prediction = model_p.predict(std_data)
+            features = [fo, fhi, flo, jitter_p, jitter_abs, rap, ppq, ddp,
+                        shimmer, shimmer_db, apq3, apq5, apq, dda, nhr, hnr,
+                        rpde, dfa, spread1, spread2, d2, ppe]
+            input_data = np.asarray(features).reshape(1,-1)
+            std_data = scaler_p.transform(input_data)
+            prediction = model_p.predict(std_data)
 
-                st.markdown("---")
-                if prediction[0] == 1:
-                    st.error("### Result: High likelihood of Parkinson's Disease.")
-                    
-                    # --- YOUR PRECAUTIONS & DIET SECTION ---
-                    st.subheader("📋 Management, Precautions & Diet")
-                    p_col1, p_col2 = st.columns(2)
-                    
-                    with p_col1:
-                        st.markdown("""
-                        **Dietary Suggestions:**
-                        * **Antioxidants:** Berries and leafy greens.
-                        * **Omega-3:** Walnuts and fish for brain health.
-                        * **Hydration:** Drink at least 8 glasses of water.
-                        """)
-                    
-                    with p_col2:
-                        st.markdown("""
-                        **Daily Precautions:**
-                        * **Physical Therapy:** Stretching and balance exercises.
-                        * **Speech Therapy:** Practice vocal exercises.
-                        * **Fall Prevention:** Keep rooms well-lit.
-                        """)
-
-                    # --- YOUR VIDEO LINKS ---
-                    st.markdown("---")
-                    st.subheader("Helpful YouTube Resources")
-                    v_col1, v_col2 = st.columns(2)
-                    with v_col1:
-                        st.video("https://www.youtube.com/watch?v=ARdGsh_D_XU")
-                        st.caption("Symptoms Guide")
-                    with v_col2:
-                        st.video("https://www.youtube.com/watch?v=S_3f760x0E0")
-                        st.caption("Exercise Routine")
-                else:
-                    st.success("### Result: The model predicts NO Parkinson's Disease.")
-                    st.balloons()
-            except Exception as e:
-                st.error(f"Prediction Error: {e}")
-
-# MENU 4: PRESCRIPTION DECODER (Your pra.py content)
-elif selected == "Prescription Decoder":
-    # Load environment variables
-load_dotenv()
-
-# Configure Gemini
-# API_KEY = os.getenv("GEMINI_API_KEY")
-# if API_KEY:
-#     genai.configure(api_key=API_KEY)
-# else:
-#     st.error("Gemini API Key not found. Please set it in your environment variables.")
-
-st.set_page_config(
-    page_title="AI Prescription Decoder",
-    page_icon="💊",
-    layout="wide"
-)
-
-# Custom CSS for Premium Look
-st.markdown("""
-<style>
-    .main {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    }
-    .stButton>button {
-        width: 100%;
-        border-radius: 20px;
-        height: 3em;
-        background-color: #007bff;
-        color: white;
-        font-weight: bold;
-    }
-    .header-text {
-        color: #1a2a6c;
-        text-align: center;
-        font-family: 'Inter', sans-serif;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-def analyze_prescription(image):
-    """
-    Analyzes the prescription image using available Gemini models with fallback.
-    """
-    # Priority list of models to try
-    models_to_try = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-flash-latest']
-    
-    last_error = ""
-    
-    for model_name in models_to_try:
-        try:
-            model = genai.GenerativeModel(model_name)
-            
-            prompt = """
-            You are a highly skilled medical pharmacist. 
-            Analyze the provided image of a handwritten prescription.
-            1. Transcribe the handwriting accurately.
-            2. Extract the following details for each medicine:
-               - Medicine Name
-               - Dosage (e.g., 500mg, 10ml)
-               - Frequency (e.g., Twice a day, 1-0-1)
-               - Duration (e.g., 5 days)
-               - Special Instructions (e.g., Before food, avoid dairy)
-            3. Provide a brief summary of what the prescription is for (if discernible).
-            4. ADD A STRONG DISCLAIMER: "This is an AI-generated interpretation. Please verify with a qualified pharmacist or doctor."
-            
-            Format the output in a clean, structured way using Markdown tables.
-            """
-            
-            response = model.generate_content([prompt, image])
-            return f"*(Using model: {model_name})*\n\n" + response.text
-            
-        except Exception as e:
-            last_error = str(e)
-            # If it's a quota error or 404, try the next model
-            if "429" in last_error or "404" in last_error:
-                continue
+            if prediction[0] == 1:
+                st.error("### Result: High likelihood of Parkinson's Disease.")
+                st.subheader("📋 Management, Precautions & Diet")
+                p_col1, p_col2 = st.columns(2)
+                with p_col1:
+                    st.markdown("**Dietary Suggestions:**\n* **Antioxidants:** Berries.\n* **Omega-3:** Fish.")
+                with p_col2:
+                    st.markdown("**Daily Precautions:**\n* **Physical Therapy.**\n* **Fall Prevention.**")
             else:
-                return f"Error during analysis: {last_error}"
-    
-    return f"Failed to analyze. Last error: {last_error}\n\nAll tried models: {models_to_try}"
+                st.success("### Result: No Parkinson's Disease predicted.")
 
-def main():
-    st.markdown("<h1 class='header-text'>🩺 AI Prescription Decoder</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>Transform unreadable handwriting into clear medical guidance.</p>", unsafe_allow_html=True)
+# MENU 4: PRESCRIPTION DECODER
+elif selected == "Prescription Decoder":
+    st.markdown("<h1 style='color: #1a2a6c; text-align: center;'>🩺 AI Prescription Decoder</h1>", unsafe_allow_html=True)
     
-    st.divider()
-    
-    # Simple sidebar for API key if not in Env
     with st.sidebar:
-        st.title("Settings")
+        st.divider()
         api_key = st.text_input("Enter Gemini API Key", type="password")
         if api_key:
             genai.configure(api_key=api_key)
@@ -347,17 +226,17 @@ def main():
     
     with col1:
         st.subheader("📤 Upload Prescription")
-        uploaded_file = st.file_uploader("Choose an image of your prescription...", type=["jpg", "jpeg", "png"])
+        uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
         
         if uploaded_file is not None:
             image = Image.open(uploaded_file)
-            st.image(image, caption="Uploaded Image", use_column_width=True)
+            st.image(image, caption="Uploaded Image", use_container_width=True)
             
             if st.button("Analyze Prescription"):
                 if not api_key:
                     st.error("Please provide an API key in the sidebar first.")
                 else:
-                    with st.spinner("🧠 AI is decoding the handwriting..."):
+                    with st.spinner("🧠 AI is decoding..."):
                         analysis_result = analyze_prescription(image)
                         st.session_state['analysis_result'] = analysis_result
     
@@ -366,9 +245,4 @@ def main():
         if 'analysis_result' in st.session_state:
             st.markdown(st.session_state['analysis_result'])
         else:
-            st.info("Upload and analyze a prescription to see the digital interpretation here.")
-
-if __name__ == "__main__":
-    main()
-
-
+            st.info("Upload and analyze a prescription to see the results here.")
